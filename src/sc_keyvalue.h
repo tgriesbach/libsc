@@ -36,11 +36,12 @@ SC_EXTERN_C_BEGIN;
 /** The values can have different types. */
 typedef enum
 {
-  SC_KEYVALUE_ENTRY_NONE = 0,   /**< Designate an invalid situation. */
+  SC_KEYVALUE_ENTRY_NONE = 13100,       /**< Designate an invalid situation. */
   SC_KEYVALUE_ENTRY_INT,        /**< Used for values of type int. */
   SC_KEYVALUE_ENTRY_DOUBLE,     /**< Used for values of type double. */
   SC_KEYVALUE_ENTRY_STRING,     /**< Used for values of type const char *. */
-  SC_KEYVALUE_ENTRY_POINTER     /**< Used for values of anonymous pointer type. */
+  SC_KEYVALUE_ENTRY_POINTER,    /**< Used for values of anonymous pointer type. */
+  SC_KEYVALUE_ENTRY_LAST
 }
 sc_keyvalue_entry_type_t;
 

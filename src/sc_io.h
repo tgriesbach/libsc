@@ -56,7 +56,7 @@ sc_io_error_t;
 
 typedef enum
 {
-  SC_IO_MODE_WRITE,     /**< Semantics as "w" in fopen. */
+  SC_IO_MODE_WRITE = 12300,     /**< Semantics as "w" in fopen. */
   SC_IO_MODE_APPEND,    /**< Semantics as "a" in fopen. */
   SC_IO_MODE_LAST       /**< Invalid entry to close list */
 }
@@ -64,14 +64,14 @@ sc_io_mode_t;
 
 typedef enum
 {
-  SC_IO_ENCODE_NONE,
+  SC_IO_ENCODE_NONE = 12400,    /**< No encoding. */
   SC_IO_ENCODE_LAST     /**< Invalid entry to close list */
 }
 sc_io_encode_t;
 
 typedef enum
 {
-  SC_IO_TYPE_BUFFER,
+  SC_IO_TYPE_BUFFER = 12500,
   SC_IO_TYPE_FILENAME,
   SC_IO_TYPE_FILEFILE,
   SC_IO_TYPE_LAST       /**< Invalid entry to close list */
@@ -107,9 +107,10 @@ sc_io_source_t;
 
 typedef enum
 {
-  SC_READ,
-  SC_WRITE_CREATE,
-  SC_WRITE_APPEND
+  SC_IO_READ = 12600,
+  SC_IO_WRITE_CREATE,
+  SC_IO_WRITE_APPEND,
+  SC_IO_WRITE_LAST
 }
 sc_io_open_mode_t;
 
