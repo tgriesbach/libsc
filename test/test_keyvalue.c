@@ -183,19 +183,19 @@ main (int argc, char **argv)
   }
 
   /* Direct verification that these objects no longer exist */
-  if (sc_keyvalue_exists (args2, "intTest")) {
+  if (sc_keyvalue_exists (args2, "intTest") != SC_KEYVALUE_ENTRY_NONE) {
     SC_VERBOSE ("Test 4 failure on int\n");
     num_failed_tests++;
   }
-  if (sc_keyvalue_exists (args2, "doubleTest")) {
+  if (sc_keyvalue_exists (args2, "doubleTest") != SC_KEYVALUE_ENTRY_NONE) {
     SC_VERBOSE ("Test 4 failure on double\n");
     num_failed_tests++;
   }
-  if (sc_keyvalue_exists (args2, "stringTest")) {
+  if (sc_keyvalue_exists (args2, "stringTest") != SC_KEYVALUE_ENTRY_NONE) {
     SC_VERBOSE ("Test 4 failure on string\n");
     num_failed_tests++;
   }
-  if (sc_keyvalue_exists (args2, "pointerTest")) {
+  if (sc_keyvalue_exists (args2, "pointerTest") != SC_KEYVALUE_ENTRY_NONE) {
     SC_VERBOSE ("Test 4 failure on pointer\n");
     num_failed_tests++;
   }
