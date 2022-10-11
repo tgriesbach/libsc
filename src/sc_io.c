@@ -1158,7 +1158,7 @@ sc_io_write_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset,
   mpiret = MPI_File_write_at_all (mpifile, offset, (void *) ptr,
                                   (int) zcount, t, &mpistatus);
   if (mpiret == sc_MPI_SUCCESS) {
-    mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
+    mpiret = MPI_Get_count (&mpistatus, t, ocount);
     SC_CHECK_MPI (mpiret);
     return sc_MPI_SUCCESS;
   }
