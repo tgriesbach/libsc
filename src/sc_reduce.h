@@ -79,7 +79,9 @@ int                 sc_allreduce_custom (void *sendbuf, void *recvbuf,
  * \param [in] sendtype     Valid MPI datatype.
  * \param [in] reduce_fn    Custom, associative reduction operator.
  *                          \reduce_fn is called on an array of items
- *                          of the length \a sendcount.
+ *                          of the length \a sendcount. The \a sendtype
+ *                          parameter of the \a reduce_fn is always
+ *                          \ref sc_MPI_BYTE.
  * \param [in] mpicomm      Valid MPI communicator.
  * \return                  sc_MPI_SUCCESS if not aborting on MPI error.
  */
