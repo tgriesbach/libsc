@@ -26,8 +26,8 @@
 
 static void
 sc_reduce_alltoall (sc_MPI_Comm mpicomm,
-                    void *data, int count, sc_MPI_Datatype datatype,
-                    int groupsize, int target,
+                    void *data, int count, int itemsize,
+                    sc_MPI_Datatype datatype, int groupsize, int target,
                     int maxlevel, int level, int branch,
                     sc_reduce_t reduce_fn)
 {
@@ -54,7 +54,7 @@ sc_reduce_alltoall (sc_MPI_Comm mpicomm,
   SC_ASSERT (reduce_fn != NULL);
 
   /* *INDENT-OFF* HORRIBLE indent bug */
-  datasize = (size_t) count * sc_mpi_sizeof (datatype);
+  datasize = (size_t) count * ((size_t) itemsize) * sc_mpi_sizeof (datatype);
   /* *INDENT-ON* */
 
   if (doall || target == myrank) {
@@ -112,7 +112,7 @@ sc_reduce_alltoall (sc_MPI_Comm mpicomm,
         if (peer2 < groupsize) {
           reduce_fn (alldata + ((2 * i + 1) << shift) * datasize,
                      alldata + ((2 * i) << shift) * datasize,
-                     count, datatype);
+                     count, itemsize, datatype);
         }
       }
     }
@@ -135,8 +135,8 @@ sc_reduce_alltoall (sc_MPI_Comm mpicomm,
 
 static void
 sc_reduce_recursive (sc_MPI_Comm mpicomm,
-                     void *data, int count, sc_MPI_Datatype datatype,
-                     int groupsize, int target,
+                     void *data, int count, int itemsize,
+                     sc_MPI_Datatype datatype, int groupsize, int target,
                      int maxlevel, int level, int branch,
                      sc_reduce_t reduce_fn)
 {
@@ -166,13 +166,13 @@ sc_reduce_recursive (sc_MPI_Comm mpicomm,
   }
   else if (level <= SC_REDUCE_ALLTOALL_LEVEL) {
     /* all-to-all communication */
-    sc_reduce_alltoall (mpicomm, data, count, datatype,
+    sc_reduce_alltoall (mpicomm, data, count, itemsize, datatype,
                         groupsize, orig_target,
                         maxlevel, level, branch, reduce_fn);
   }
   else {
     /* *INDENT-OFF* HORRIBLE indent bug */
-    datasize = (size_t) count * sc_mpi_sizeof (datatype);
+    datasize = (size_t) count * ((size_t) itemsize) * sc_mpi_sizeof (datatype);
     /* *INDENT-ON* */
     peer = sc_search_bias (maxlevel, level, branch ^ 0x01, target);
     SC_ASSERT (peer != myrank);
@@ -188,12 +188,12 @@ sc_reduce_recursive (sc_MPI_Comm mpicomm,
         SC_CHECK_MPI (mpiret);
 
         /* execute reduction operation here */
-        reduce_fn (peerdata, data, count, datatype);
+        reduce_fn (peerdata, data, count, itemsize, datatype);
         SC_FREE (peerdata);
       }
 
       /* execute next higher level of recursion */
-      sc_reduce_recursive (mpicomm, data, count, datatype,
+      sc_reduce_recursive (mpicomm, data, count, itemsize, datatype,
                            groupsize, orig_target,
                            maxlevel, level - 1, branch / 2, reduce_fn);
 
@@ -222,9 +222,13 @@ sc_reduce_recursive (sc_MPI_Comm mpicomm,
 
 static void
 sc_reduce_max (void *sendbuf, void *recvbuf,
-               int sendcount, sc_MPI_Datatype sendtype)
+               int sendcount, int itemsize, sc_MPI_Datatype sendtype)
 {
   int                 i;
+
+  if (itemsize != 1) {
+    SC_ABORT ("sc_reduce_max supports only itemsize == 1");
+  }
 
   if (sendtype == sc_MPI_CHAR || sendtype == sc_MPI_BYTE) {
     const char         *s = (char *) sendbuf;
@@ -310,9 +314,13 @@ sc_reduce_max (void *sendbuf, void *recvbuf,
 
 static void
 sc_reduce_min (void *sendbuf, void *recvbuf,
-               int sendcount, sc_MPI_Datatype sendtype)
+               int sendcount, int itemsize, sc_MPI_Datatype sendtype)
 {
   int                 i;
+
+  if (itemsize != 1) {
+    SC_ABORT ("sc_reduce_min supports only itemsize == 1");
+  }
 
   if (sendtype == sc_MPI_CHAR || sendtype == sc_MPI_BYTE) {
     const char         *s = (char *) sendbuf;
@@ -398,9 +406,13 @@ sc_reduce_min (void *sendbuf, void *recvbuf,
 
 static void
 sc_reduce_sum (void *sendbuf, void *recvbuf,
-               int sendcount, sc_MPI_Datatype sendtype)
+               int sendcount, int itemsize, sc_MPI_Datatype sendtype)
 {
   int                 i;
+
+  if (itemsize != 1) {
+    SC_ABORT ("sc_reduce_sum supports only itemsize == 1");
+  }
 
   if (sendtype == sc_MPI_CHAR || sendtype == sc_MPI_BYTE) {
     const char         *s = (char *) sendbuf;
@@ -475,8 +487,9 @@ sc_reduce_sum (void *sendbuf, void *recvbuf,
 
 static int
 sc_reduce_custom_dispatch (void *sendbuf, void *recvbuf, int sendcount,
-                           sc_MPI_Datatype sendtype, sc_reduce_t reduce_fn,
-                           int target, sc_MPI_Comm mpicomm)
+                           int itemsize, sc_MPI_Datatype sendtype,
+                           sc_reduce_t reduce_fn, int target,
+                           sc_MPI_Comm mpicomm)
 {
   int                 mpiret;
   int                 mpisize;
@@ -498,9 +511,13 @@ sc_reduce_custom_dispatch (void *sendbuf, void *recvbuf, int sendcount,
 
   SC_ASSERT (-1 <= target && target < mpisize);
 
+  /* if we do not use items, itemsize is 1 */
+  SC_ASSERT (itemsize >= 1);
+
   maxlevel = SC_LOG2_32 (mpisize - 1) + 1;
-  sc_reduce_recursive (mpicomm, recvbuf, sendcount, sendtype, mpisize,
-                       target, maxlevel, maxlevel, mpirank, reduce_fn);
+  sc_reduce_recursive (mpicomm, recvbuf, sendcount, itemsize, sendtype,
+                       mpisize, target, maxlevel, maxlevel, mpirank,
+                       reduce_fn);
 
   return sc_MPI_SUCCESS;
 }
@@ -510,8 +527,19 @@ sc_allreduce_custom (void *sendbuf, void *recvbuf, int sendcount,
                      sc_MPI_Datatype sendtype, sc_reduce_t reduce_fn,
                      sc_MPI_Comm mpicomm)
 {
-  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount,
+  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount, 1,
                                     sendtype, reduce_fn, -1, mpicomm);
+}
+
+int
+sc_allreduce_custom_items (void *sendbuf, void *recvbuf,
+                           int sendcount,
+                           size_t item_size,
+                           sc_reduce_t reduce_fn, sc_MPI_Comm mpicomm)
+{
+  /* TODO: reduce_fn need to know item_size */
+  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount, item_size,
+                                    sc_MPI_BYTE, reduce_fn, -1, mpicomm);
 }
 
 int
@@ -522,7 +550,7 @@ sc_reduce_custom (void *sendbuf, void *recvbuf, int sendcount,
   SC_CHECK_ABORT (target >= 0,
                   "sc_reduce_custom requires non-negative target");
 
-  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount,
+  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount, 1,
                                     sendtype, reduce_fn, target, mpicomm);
 }
 
@@ -542,7 +570,7 @@ sc_reduce_dispatch (void *sendbuf, void *recvbuf, int sendcount,
   else
     SC_ABORT ("Unsupported operation in sc_allreduce or sc_reduce");
 
-  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount,
+  return sc_reduce_custom_dispatch (sendbuf, recvbuf, sendcount, 1,
                                     sendtype, reduce_fn, target, mpicomm);
 }
 

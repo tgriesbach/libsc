@@ -23,6 +23,45 @@
 
 #include <sc_reduce.h>
 
+#define NUM_CELLS 512
+
+typedef struct cell
+{
+  uint64_t            id;
+  double              depth;
+}
+cell_t;
+
+static void
+sc_reduce_cell (void *sendbuf, void *recvbuf,
+                int sendcount, int itemsize, sc_MPI_Datatype sendtype)
+{
+  SC_ASSERT (sendtype == sc_MPI_BYTE);
+  SC_ASSERT (itemsize == sizeof (cell_t));
+
+  int                 i;
+  const cell_t       *cells_send = (cell_t *) sendbuf;
+  cell_t             *cells_recv = (cell_t *) recvbuf;
+
+  for (i = 0; i < sendcount; ++i) {
+    if (cells_send[i].depth < cells_recv[i].depth) {
+      /* copy smaller depth cell to the result */
+      cells_recv[i].id = cells_send[i].id;
+      cells_recv[i].depth = cells_send[i].depth;
+    }
+    else if (cells_send[i].depth == cells_recv[i].depth) {
+      /* prefer smaller id */
+      if (cells_send[i].id < cells_recv[i].depth) {
+        cells_recv[i].id = cells_send[i].id;
+        cells_recv[i].depth = cells_send[i].depth;
+      }
+    }
+    else {
+      /* recvbuf already contains the correct cell */
+    }
+  }
+}
+
 int
 main (int argc, char **argv)
 {
@@ -36,6 +75,7 @@ main (int argc, char **argv)
   float               fvalue[3], fresult[3], fexpect[3];
   double              dvalue, dresult;
   sc_MPI_Comm         mpicomm;
+  cell_t              cells[NUM_CELLS];
 
   mpiret = sc_MPI_Init (&argc, &argv);
   SC_CHECK_MPI (mpiret);
@@ -99,6 +139,22 @@ main (int argc, char **argv)
       SC_CHECK_ABORT (dresult == ((double) (mpisize - 1)) * mpisize / 2.,       /* ok */
                       "Reduce mismatch");
     }
+  }
+
+  /* test reduce_custom_items */
+  /* fill array of cell data */
+  for (i = 0; i < NUM_CELLS; ++i) {
+    cells[i].id = (uint64_t) (NUM_CELLS * mpirank + i);
+    cells[i].depth = 1. / ((double) mpirank + 1.);
+  }
+  /* reduce over the cell data */
+  sc_allreduce_custom_items (&cells, &cells, NUM_CELLS, sizeof (cell_t),
+                             sc_reduce_cell, mpicomm);
+  /* check the result */
+  for (i = 0; i < NUM_CELLS; ++i) {
+    SC_CHECK_ABORT (cells[i].id == (uint64_t) (NUM_CELLS * (mpisize - 1) + i)
+                    && cells[i].depth == 1. / ((double) mpisize),
+                    "allreduce_custom_items mismatch");
   }
 
   sc_finalize ();

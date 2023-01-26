@@ -51,7 +51,8 @@ SC_EXTERN_C_BEGIN;
 
 /** Prototype for a user-defined reduce operation. */
 typedef void        (*sc_reduce_t) (void *sendbuf, void *recvbuf,
-                                    int sendcount, sc_MPI_Datatype sendtype);
+                                    int sendcount, int itemsize,
+                                    sc_MPI_Datatype sendtype);
 
 /** Custom allreduce operation with reproducible associativity.
  * \param [in] sendbuf      Send buffer conforming to MPI specification.
@@ -68,15 +69,28 @@ int                 sc_allreduce_custom (void *sendbuf, void *recvbuf,
                                          sc_reduce_t reduce_fn,
                                          sc_MPI_Comm mpicomm);
 
-/** Custom reduce operation with reproducible associativity.
+/** Custom allreduce operation for array of items.
+ * The function reduces \a item_count many items of \a item_size bytes
+ * per call of \a reduce_fn.
  * \param [in] sendbuf      Send buffer conforming to MPI specification.
  * \param [out] recvbuf     Receive buffer conforming to MPI specification.
  * \param [in] sendcount    Number of data items to reduce.
+ * \param [in] item_size    The size of each item in number of bytes.
  * \param [in] sendtype     Valid MPI datatype.
  * \param [in] reduce_fn    Custom, associative reduction operator.
- * \param [in] target       The MPI rank that obtains the result.
+ *                          \reduce_fn is called on an array of items
+ *                          of the length \a sendcount.
  * \param [in] mpicomm      Valid MPI communicator.
  * \return                  sc_MPI_SUCCESS if not aborting on MPI error.
+ */
+int                 sc_allreduce_custom_items (void *sendbuf, void *recvbuf,
+                                               int sendcount,
+                                               size_t item_size,
+                                               sc_reduce_t reduce_fn,
+                                               sc_MPI_Comm mpicomm);
+
+/** Custom reduce operation.
+ * \param [in] target   The MPI rank that obtains the result.
  */
 int                 sc_reduce_custom (void *sendbuf, void *recvbuf,
                                       int sendcount, sc_MPI_Datatype sendtype,
