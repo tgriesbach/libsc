@@ -139,7 +139,7 @@ sc_tag_t;
 typedef enum sc_MPI_IO_Errorcode
 {
   /* only MPI I/O error classes */
-  sc_MPI_ERR_FILE = MPI_ERR_LASTCODE,
+  sc_MPI_ERR_FILE = 15000,
   sc_MPI_ERR_NOT_SAME,
   sc_MPI_ERR_AMODE,
   sc_MPI_ERR_UNSUPPORTED_DATAREP,

@@ -120,7 +120,7 @@ typedef MPI_Op      sc3_MPI_Op_t;
 typedef enum sc3_MPI_IO_Errorcode
 {
   /* only MPI I/O error classes */
-  SC3_MPI_ERR_FILE = MPI_ERR_LASTCODE,
+  SC3_MPI_ERR_FILE = 15000,
   SC3_MPI_ERR_NOT_SAME,
   SC3_MPI_ERR_AMODE,
   SC3_MPI_ERR_UNSUPPORTED_DATAREP,
