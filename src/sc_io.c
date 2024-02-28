@@ -1476,6 +1476,18 @@ sc_io_error_class (int errorcode, int *errorclass)
 #ifdef SC_ENABLE_MPIIO
   return MPI_Error_class (errorcode, errorclass);
 #else
+#ifdef SC_ENABLE_MPI
+  /* If the following assertion does not hold, the internally used enum offset
+   * conflicts with the MPI error codes are disjoint. One may fix such a problem
+   * by increasing SC3_MPI_ERR_OFFSET but for non-contiguous MPI error code
+   * implementation this approach may not work.
+   */
+  /* *INDENT-OFF* */
+  SC_ASSERT (!((sc_MPI_ERR_OFFSET <= errorcode)
+              && (errorcode < sc_MPI_ERR_LASTCODE)));
+  /* *INDENT-ON */
+#endif
+
   if (errorclass == NULL) {
     return sc_MPI_ERR_ARG;
   }

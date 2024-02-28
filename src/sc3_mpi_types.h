@@ -114,13 +114,16 @@ typedef MPI_Op      sc3_MPI_Op_t;
 #define SC_MPI_ERR_IO                     MPI_ERR_IO
 
 #define SC3_MPI_ERR_LASTCODE              MPI_ERR_LASTCODE
+#define SC3_MPI_ENUM_OFFSET               SC3_MPI_ERR_LASTCODE
 
 #else
+
+#define SC3_MPI_ENUM_OFFSET               15000
 
 typedef enum sc3_MPI_IO_Errorcode
 {
   /* only MPI I/O error classes */
-  SC3_MPI_ERR_FILE = 15000,
+  SC3_MPI_ERR_FILE = SC3_MPI_ENUM_OFFSET,
   SC3_MPI_ERR_NOT_SAME,
   SC3_MPI_ERR_AMODE,
   SC3_MPI_ERR_UNSUPPORTED_DATAREP,
@@ -225,6 +228,8 @@ typedef enum sc3_MPI_Errorcode
   SC3_MPI_ERR_LASTCODE
 }
 sc3_MPI_Errorcode_t;
+
+#define SC3_MPI_ENUM_OFFSET               SC3_MPI_ERR_LASTCODE
 
 /** We need several parameters to MPI functions. */
 typedef enum sc3_MPI_Enum

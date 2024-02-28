@@ -133,13 +133,16 @@ sc_tag_t;
 #define sc_MPI_ERR_IO                     MPI_ERR_IO
 
 #define sc_MPI_ERR_LASTCODE               MPI_ERR_LASTCODE
+#define sc_MPI_ENUM_OFFSET                sc_MPI_ERR_LASTCODE
 
 #else /* !SC_ENABLE_MPIIO */
+
+#define sc_MPI_ENUM_OFFSET                15000
 
 typedef enum sc_MPI_IO_Errorcode
 {
   /* only MPI I/O error classes */
-  sc_MPI_ERR_FILE = 15000,
+  sc_MPI_ERR_FILE = sc_MPI_ENUM_OFFSET,
   sc_MPI_ERR_NOT_SAME,
   sc_MPI_ERR_AMODE,
   sc_MPI_ERR_UNSUPPORTED_DATAREP,
@@ -325,6 +328,7 @@ sc_MPI_IO_Errorcode_t;
 #define sc_MPI_ERR_CONVERSION   SC3_MPI_ERR_CONVERSION  /**< Emulate \c SC_MPI_ERR_CONVERSION. */
 #define sc_MPI_ERR_IO           SC3_MPI_ERR_IO          /**< Emulate \c SC_MPI_ERR_IO. */
 #define sc_MPI_ERR_LASTCODE     SC3_MPI_ERR_LASTCODE    /**< Emulate \c SC_MPI_ERR_LASTCODE. */
+#define sc_MPI_ENUM_OFFSET      SC3_MPI_ERR_OFFSET    /**< Emulate \c SC_MPI_ENUM_OFFSET. */
 
 /** Emulate \c MPI_MAX_ERROR_STRING. */
 #define sc_MPI_MAX_ERROR_STRING    SC3_MPI_MAX_ERROR_STRING
