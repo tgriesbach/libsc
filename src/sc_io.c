@@ -37,7 +37,7 @@
 #include <errno.h>
 #endif
 
-#define SC_IO_MAX_MPIIO_RETRY 20
+#define SC_IO_MAX_MPIIO_RETRY 50
 
 /**
  * Always peform the given number retries since we need to avoid a deadlock.
@@ -58,6 +58,7 @@
             if (mpiret == sc_MPI_SUCCESS) {\
                 retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
                 SC_CHECK_MPI (retval);\
+                printf ("coll: ocount = %d\n", *ocount);\
                 ocount_internal += *ocount;\
             }\
             else if (mpiret == sc_MPI_SUCCESS && count == 0) {}\
@@ -92,6 +93,7 @@
             if (mpiret == sc_MPI_SUCCESS) {\
                 retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
                 SC_CHECK_MPI (retval);\
+                printf ("non-coll: ocount = %d\n", *ocount);\
                 ocount_internal += *ocount;\
             }\
             else {\
