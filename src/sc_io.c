@@ -1793,7 +1793,7 @@ sc_io_read_at (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  SC_MPIIO_NONCOLL_RETRY (MPI_File_read_at, mpifile, offset, ptr, count, t,
+  SC_MPIIO_COLL_RETRY (MPI_File_read_at, mpifile, offset, ptr, count, t,
                           SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
 
   return errcode;
@@ -2061,7 +2061,7 @@ sc_io_write_at (sc_MPI_File mpifile, sc_MPI_Offset offset,
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  SC_MPIIO_NONCOLL_RETRY (MPI_File_write_at, mpifile, offset, ptr, count, t,
+  SC_MPIIO_COLL_RETRY (MPI_File_write_at, mpifile, offset, ptr, count, t,
                           SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
 
   return errcode;
