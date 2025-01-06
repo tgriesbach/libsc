@@ -147,6 +147,7 @@
                                     int sc_scda_global_cerr;                 \
                                     int sc_scda_local_cerr;                  \
                                     int sc_scda_mpiret;                      \
+                                    printf ("icount = %d, ocount = %d\n", (int) icount, (int) ocount);\
                                     SC_ASSERT (                              \
                                       sc_scda_ferror_is_success (*errcode)); \
                                     sc_scda_local_cerr =                     \
@@ -186,6 +187,7 @@
  */
 #define SC_SCDA_CHECK_NONCOLL_COUNT_ERR(icount, ocount, cerror) do {           \
                                     *cerror = ((int) icount) != ocount;        \
+                                    printf ("icount = %d, ocount = %d\n", (int) icount, (int) ocount);\
                                     if (*cerror) {                             \
                                     SC_LERRORF ("Count error at "              \
                                                 "%s:%d.\n", __FILE__, __LINE__);\
