@@ -37,7 +37,7 @@
 #include <errno.h>
 #endif
 
-#define SC_IO_MAX_MPIIO_RETRY 50
+#define SC_IO_MAX_MPIIO_RETRY 10
 
 /**
  * Always peform the given number retries since we need to avoid a deadlock.
