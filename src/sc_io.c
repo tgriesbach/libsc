@@ -58,7 +58,7 @@
             if (mpiret == sc_MPI_SUCCESS) {\
                 retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
                 SC_CHECK_MPI (retval);\
-                printf ("coll: ocount = %d\n", *ocount);\
+                printf ("[iter = %d] coll: ocount = %d\n", retries, *ocount);\
                 ocount_internal += *ocount;\
             }\
             else if (mpiret == sc_MPI_SUCCESS && count == 0) {}\
@@ -93,7 +93,7 @@
             if (mpiret == sc_MPI_SUCCESS) {\
                 retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
                 SC_CHECK_MPI (retval);\
-                printf ("non-coll: ocount = %d\n", *ocount);\
+                printf ("[iter = %d] non-coll: ocount = %d\n", retries, *ocount);\
                 ocount_internal += *ocount;\
             }\
             else {\
