@@ -37,6 +37,79 @@
 #include <errno.h>
 #endif
 
+#define SC_IO_MAX_MPIIO_RETRY 20
+
+/**
+ * Always peform the given number retries since we need to avoid a deadlock.
+ *
+ */
+#define SC_MPIIO_COLL_RETRY(func, mpifile, offset, ptr, count, t, max_retries, ocount, errcode) \
+    do { \
+        int mpiret;\
+        int retries = 0;\
+        int ocount_internal = 0;\
+        int retval;\
+        MPI_Status mpistatus;\
+        SC_ASSERT (*ocount == 0);\
+        while (retries < max_retries) {\
+            SC_ASSERT (count >= ocount_internal);\
+            mpiret = func (mpifile, offset + (sc_MPI_Offset) ocount_internal,\
+                           (void *) ptr, count - ocount_internal, t, &mpistatus);\
+            if (mpiret == sc_MPI_SUCCESS) {\
+                retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
+                SC_CHECK_MPI (retval);\
+                ocount_internal += *ocount;\
+            }\
+            else if (mpiret == sc_MPI_SUCCESS && count == 0) {}\
+            else {\
+                fprintf(stderr, "Error writing to file: %d\n", mpiret);\
+                break;\
+            }\
+            retries++;\
+        }\
+        retval = sc_io_error_class (mpiret, errcode);\
+        SC_CHECK_MPI (retval);\
+        *ocount = ocount_internal;\
+    } while (0)
+
+/**
+ * Stop retrying if all elements are written/read.
+ *
+ */
+#define SC_MPIIO_NONCOLL_RETRY(func, mpifile, offset, ptr, count, t, max_retries, ocount, errcode) \
+    do { \
+        int mpiret;\
+        int retries = 0;\
+        int ocount_internal = 0;\
+        int retval;\
+        MPI_Status mpistatus;\
+        SC_ASSERT (*ocount == 0);\
+        while (retries < max_retries && ocount_internal < count) {\
+            SC_ASSERT (count > 0);\
+            SC_ASSERT (count >= ocount_internal);\
+            mpiret = func (mpifile, offset + (sc_MPI_Offset) ocount_internal,\
+                           (void *) ptr, count - ocount_internal, t, &mpistatus);\
+            if (mpiret == sc_MPI_SUCCESS) {\
+                retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
+                SC_CHECK_MPI (retval);\
+                ocount_internal += *ocount;\
+            }\
+            else {\
+                fprintf(stderr, "Error writing to file: %d\n", mpiret);\
+                break;\
+            }\
+            retries++;\
+        }\
+        if (count == 0) {\
+          mpiret = sc_MPI_SUCCESS;\
+        }\
+        retval = sc_io_error_class (mpiret, errcode);\
+        SC_CHECK_MPI (retval);\
+        *ocount = ocount_internal;\
+    } while (0)
+
+
+
 sc_io_sink_t       *
 sc_io_sink_new (int iotype, int iomode, int ioencode, ...)
 {
@@ -1706,27 +1779,21 @@ int
 sc_io_read_at (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
                int count, sc_MPI_Datatype t, int *ocount)
 {
-#ifdef SC_ENABLE_MPIIO
-  sc_MPI_Status       mpistatus;
-#else
+#ifndef SC_ENABLE_MPIIO
   int                 size;
+  int                 mpiret;
+  int                 retval;
   long                pos;
 #endif
-  int                 mpiret, errcode, retval;
+  int                 errcode;
 
   SC_ASSERT (ocount != NULL);
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  mpiret = MPI_File_read_at (mpifile, offset, ptr, count, t, &mpistatus);
-  if (mpiret == sc_MPI_SUCCESS && count > 0) {
-    /* working around 0 count not working for some implementations */
-    mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
-    SC_CHECK_MPI (mpiret);
-    return sc_MPI_SUCCESS;
-  }
-  retval = sc_io_error_class (mpiret, &errcode);
-  SC_CHECK_MPI (retval);
+  SC_MPIIO_NONCOLL_RETRY (MPI_File_read_at, mpifile, offset, ptr, count, t,
+                          SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
+
   return errcode;
 #else
 
@@ -1791,26 +1858,15 @@ sc_io_read_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
                    int count, sc_MPI_Datatype t, int *ocount)
 {
 #ifdef SC_ENABLE_MPI
-  int                 mpiret, errcode, retval;
-  sc_MPI_Status       mpistatus;
+  int                 errcode;
 #endif
 
   SC_ASSERT (ocount != NULL);
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  mpiret = MPI_File_read_at_all (mpifile, offset, ptr,
-                                 count, t, &mpistatus);
-  if (mpiret == sc_MPI_SUCCESS && count > 0) {
-    /* working around 0 count not working for some implementations */
-    mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
-    SC_CHECK_MPI (mpiret);
-
-    return sc_MPI_SUCCESS;
-  }
-
-  retval = sc_io_error_class (mpiret, &errcode);
-  SC_CHECK_MPI (retval);
+  SC_MPIIO_COLL_RETRY (MPI_File_read_at_all, mpifile, offset, ptr, count, t,
+                       SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
 
   return errcode;
 #elif defined SC_ENABLE_MPI
@@ -1991,27 +2047,21 @@ sc_io_write_at (sc_MPI_File mpifile, sc_MPI_Offset offset,
                 const void *ptr, int count, sc_MPI_Datatype t,
                 int *ocount)
 {
-#ifdef SC_ENABLE_MPIIO
-  sc_MPI_Status       mpistatus;
-#else
+#ifndef SC_ENABLE_MPIIO
   int                 size;
+  int                 mpiret;
+  int                 retval;
   long                pos;
 #endif
-  int                 mpiret, errcode, retval;
+  int                 errcode;
 
   SC_ASSERT (ocount != NULL);
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  mpiret = MPI_File_write_at (mpifile, offset, ptr, count, t, &mpistatus);
-  if (mpiret == sc_MPI_SUCCESS && count > 0) {
-    /* working around 0 count not working for some implementations */
-    mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
-    SC_CHECK_MPI (mpiret);
-    return sc_MPI_SUCCESS;
-  }
-  retval = sc_io_error_class (mpiret, &errcode);
-  SC_CHECK_MPI (retval);
+  SC_MPIIO_NONCOLL_RETRY (MPI_File_write_at, mpifile, offset, ptr, count, t,
+                          SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
+
   return errcode;
 #else
 
@@ -2077,25 +2127,15 @@ sc_io_write_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset,
                     int *ocount)
 {
 #ifdef SC_ENABLE_MPI
-  int                 mpiret, errcode, retval;
-  sc_MPI_Status       mpistatus;
+  int                 errcode;
 #endif
 
   SC_ASSERT (ocount != NULL);
   *ocount = 0;
 
 #ifdef SC_ENABLE_MPIIO
-  mpiret = MPI_File_write_at_all (mpifile, offset, (void *) ptr,
-                                  count, t, &mpistatus);
-  if (mpiret == sc_MPI_SUCCESS && count > 0) {
-    /* working around 0 count not working for some implementations */
-    mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
-    SC_CHECK_MPI (mpiret);
-    return sc_MPI_SUCCESS;
-  }
-
-  retval = sc_io_error_class (mpiret, &errcode);
-  SC_CHECK_MPI (retval);
+  SC_MPIIO_COLL_RETRY (MPI_File_write_at_all, mpifile, offset, ptr, count, t,
+                       SC_IO_MAX_MPIIO_RETRY, ocount, &errcode);
 
   return errcode;
 #elif defined SC_ENABLE_MPI
