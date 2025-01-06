@@ -59,7 +59,7 @@
                 retval = sc_MPI_Get_count(&mpistatus, t, ocount);\
                 SC_CHECK_MPI (retval);\
                 if (*ocount < count) {\
-                  printf ("[iter = %d] coll: ocount = %d\n", retries, *ocount);\
+                  printf ("[iter = %d] coll: ocount = %d, icount = %d\n", retries, *ocount, count);\
                 }\
                 ocount_internal += *ocount;\
             }\
