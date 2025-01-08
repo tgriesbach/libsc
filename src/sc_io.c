@@ -1690,6 +1690,7 @@ sc_io_read (sc_MPI_File mpifile, void *ptr, size_t zcount,
   sc_MPI_Status       mpistatus;
 
   mpiret = MPI_File_read (mpifile, ptr, (int) zcount, t, &mpistatus);
+  usleep (5000);
   SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
 
 #ifdef SC_ENABLE_DEBUG
@@ -1976,6 +1977,7 @@ sc_io_write (sc_MPI_File mpifile, const void *ptr, size_t zcount,
 
   mpiret = MPI_File_write (mpifile, (void *) ptr,
                            (int) zcount, t, &mpistatus);
+  usleep (5000);
   SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
 
 #ifdef SC_ENABLE_DEBUG
