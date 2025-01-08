@@ -1720,7 +1720,7 @@ sc_io_read_at (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
 
 #ifdef SC_ENABLE_MPIIO
   mpiret = MPI_File_read_at (mpifile, offset, ptr, count, t, &mpistatus);
-  sleep ((unsigned) 1e-2);
+  sleep (1);
   if (mpiret == sc_MPI_SUCCESS && count > 0) {
     /* working around 0 count not working for some implementations */
     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
@@ -1803,7 +1803,7 @@ sc_io_read_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
 #ifdef SC_ENABLE_MPIIO
   mpiret = MPI_File_read_at_all (mpifile, offset, ptr,
                                  count, t, &mpistatus);
-  sleep ((unsigned) 1e-2);
+  sleep (1);
   if (mpiret == sc_MPI_SUCCESS && count > 0) {
     /* working around 0 count not working for some implementations */
     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
@@ -2007,7 +2007,8 @@ sc_io_write_at (sc_MPI_File mpifile, sc_MPI_Offset offset,
 
 #ifdef SC_ENABLE_MPIIO
   mpiret = MPI_File_write_at (mpifile, offset, ptr, count, t, &mpistatus);
-  sleep ((unsigned) 1e-2);
+  /* in the CI not called on windows */
+  sleep (1);
   if (mpiret == sc_MPI_SUCCESS && count > 0) {
     /* working around 0 count not working for some implementations */
     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
@@ -2091,7 +2092,7 @@ sc_io_write_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset,
 #ifdef SC_ENABLE_MPIIO
   mpiret = MPI_File_write_at_all (mpifile, offset, (void *) ptr,
                                   count, t, &mpistatus);
-  sleep ((unsigned) 1e-2);
+  sleep (1);
   if (mpiret == sc_MPI_SUCCESS && count > 0) {
     /* working around 0 count not working for some implementations */
     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
