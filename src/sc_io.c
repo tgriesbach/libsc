@@ -38,7 +38,7 @@
 #include <errno.h>
 #endif
 
-#define SC_HACK_MPI_SLEEP 500
+#define SC_HACK_MPI_SLEEP 5000
 
 /** In case of an unexpected retrieved count 0, this macro waits and retry.
  * In the Github Actions CI, we experienced transient CI failures due to the
