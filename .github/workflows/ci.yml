@@ -13,6 +13,9 @@ on:
       - ".github/workflows/composite-cmake/**"
   pull_request:
 
+env:
+  IO_WAITING_TIME: 1000
+
 jobs:
 
   linux-multi:
@@ -38,7 +41,7 @@ jobs:
         DIR="checkMPIdebug_shared" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi --enable-debug --disable-shared \
             CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
-            CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -47,7 +50,7 @@ jobs:
       run: |
         DIR="checkMPI" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi CFLAGS="-O2" \
-        CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -56,7 +59,7 @@ jobs:
       run: |
         DIR="checkdebug" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-debug CFLAGS="-O0 -g -Wall -Wno-uninitialized" \
-        CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -70,7 +73,7 @@ jobs:
       run: |
         DIR="checkMPIdebugCXX" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi --enable-debug CFLAGS="-O0" CC=mpicxx \
-        CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -79,7 +82,8 @@ jobs:
       run: |
         DIR="checkOpenMPMPIdebug" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-openmp="-fopenmp" --enable-mpi \
-            --enable-debug CFLAGS="-O0" CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+            --enable-debug CFLAGS="-O0" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -87,7 +91,7 @@ jobs:
       shell: bash
       run: |
         DIR="distcheck" && mkdir -p "$DIR" && cd "$DIR"
-        ../configure CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+        ../configure CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j distcheck V=0
 
     - name: Upload log files
@@ -124,7 +128,7 @@ jobs:
         ../configure --enable-mpi --enable-debug \
                      --disable-shared --enable-valgrind \
           CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
-          CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+          CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
 
@@ -170,7 +174,8 @@ jobs:
         ../configure --enable-mpi --enable-debug \
             CFLAGS="-O0 -g -pedantic -Wall -Wextra -Werror \
                 -Wno-unused-parameter -Wno-builtin-declaration-mismatch \
-                -Wno-implicit-fallthrough" CPPFLAGS="-DSC_HACK_MPI_SLEEP=1000"
+                -Wno-implicit-fallthrough" \
+                CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
         make -j V=0
         make -j check V=0
         make -j distcheck V=0
