@@ -5,10 +5,9 @@ runs:
   - name: Set macro for I/O waiting
     env:
       IO_WAITING_TIME: 1000
-      CFLAGS: -DSC_HACK_MPI_SLEEP=1000
     shell: bash
     # use an enviroment variable to prepend the flag to the bulit-in flags
-    run: export CFLAGS=-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME && echo $CFLAGS
+    run: echo -DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME > $CFLAGS && echo $CFLAGS
   - name: CMake configure
     shell: bash
     run: >-
