@@ -7,7 +7,7 @@ runs:
       IO_WAITING_TIME: 1000
     shell: bash
     # use an enviroment variable to prepend the flag to the bulit-in flags
-    run: echo "{CLAGS}={-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME}" >> "$GITHUB_ENV"
+    run: echo "{CFLAGS}={-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME}" >> "$GITHUB_ENV"
   - name: Test
     shell: bash
     run: echo $CFLAGS
