@@ -44,7 +44,7 @@
 #include <errno.h>
 #endif
 
-/** In case of an unexpected retrieved count 0, this macro waits and retry.
+/** In case of an unexpected retrieved count 0, this macro sleeps and retries.
  * In the Github Actions CI, we experienced transient CI failures due to the
  * file system not performing requested I/O operations.
  *
@@ -52,7 +52,7 @@
  * It checks if count is 0 and if this is true, it waits and then retries the
  * I/O operation once.
  */
-#define SC_IO_WAIT_AND_RETRY(func, time) do {\
+#define SC_IO_SLEEP_AND_RETRY(func, time) do {\
                                     if (*ocount == 0) {\
                                       sc_io_sleep (time);\
                                       mpiret = func (mpifile, offset,\
@@ -75,7 +75,7 @@
  */
 static void
 sc_io_sleep (int milliseconds){
-#ifdef _POSIX_C_SOURCE >= 199309L
+#if _POSIX_C_SOURCE >= 199309L
   struct timespec ts;
   /* full seconds */
   ts.tv_sec = milliseconds / 1000;
@@ -1787,7 +1787,7 @@ sc_io_read_at (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
      * The macro SC_HACK_MPI_SLEEP is expected to be defined during
      * configuration.
      */
-    SC_IO_WAIT_AND_RETRY (MPI_File_read_at, SC_HACK_MPI_SLEEP);
+    SC_IO_SLEEP_AND_RETRY (MPI_File_read_at, SC_HACK_MPI_SLEEP);
 
     return sc_MPI_SUCCESS;
   }
@@ -1877,7 +1877,7 @@ sc_io_read_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
      * The macro SC_HACK_MPI_SLEEP is expected to be defined during
      * configuration.
      */
-    SC_IO_WAIT_AND_RETRY (MPI_File_read_at_all, SC_HACK_MPI_SLEEP);
+    SC_IO_SLEEP_AND_RETRY (MPI_File_read_at_all, SC_HACK_MPI_SLEEP);
 
     return sc_MPI_SUCCESS;
   }
@@ -2088,7 +2088,7 @@ sc_io_write_at (sc_MPI_File mpifile, sc_MPI_Offset offset,
      * The macro SC_HACK_MPI_SLEEP is expected to be defined during
      * configuration.
      */
-    SC_IO_WAIT_AND_RETRY (MPI_File_write_at, SC_HACK_MPI_SLEEP);
+    SC_IO_SLEEP_AND_RETRY (MPI_File_write_at, SC_HACK_MPI_SLEEP);
 
     return sc_MPI_SUCCESS;
   }
@@ -2179,7 +2179,7 @@ sc_io_write_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset,
      * The macro SC_HACK_MPI_SLEEP is expected to be defined during
      * configuration.
      */
-    SC_IO_WAIT_AND_RETRY (MPI_File_write_at_all, SC_HACK_MPI_SLEEP);
+    SC_IO_SLEEP_AND_RETRY (MPI_File_write_at_all, SC_HACK_MPI_SLEEP);
 
     return sc_MPI_SUCCESS;
   }
