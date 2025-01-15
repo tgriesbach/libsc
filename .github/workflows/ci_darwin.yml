@@ -13,6 +13,12 @@ on:
       - ".github/workflows/composite-cmake/**"
   pull_request:
 
+env:
+  # Due to busy file system problems on the CI runners, we introduced a patch to
+  # sleep if the MPI count of an I/O operation is unexpectedly 0 and then retry
+  # the I/O operation once. The time is in milliseconds.
+  IO_SLEEP_TIME: 2
+
 jobs:
   darwin:
     runs-on: macos-latest
@@ -26,6 +32,9 @@ jobs:
      - uses: actions/checkout@main
        name: Checkout source code
 
+     - name: Patch I/O for CI by sleeping if I/O intensity is too high
+       run: git apply doc/patch/patch-CI-IO.patch
+
      - name: Install system dependencies
        run: brew install open-mpi libtool automake
 
@@ -36,7 +45,8 @@ jobs:
        run: |
           DIR="checkdebug" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-debug \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
           make -j V=0
           make -j check V=0
 
@@ -44,7 +54,8 @@ jobs:
        run: |
           DIR="checkMPIdebug" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-mpi --enable-debug \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
           make -j V=0
           make -j check V=0
 
@@ -52,7 +63,8 @@ jobs:
        run: |
           DIR="checkMPIdebugCXX" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-mpi --enable-debug CC=mpicxx \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
           make -j V=0
           make -j check V=0
 

@@ -13,6 +13,12 @@ on:
       - ".github/workflows/composite-cmake/**"
   pull_request:
 
+env:
+  # Due to busy file system problems on the CI runners, we introduced a patch to
+  # sleep if the MPI count of an I/O operation is unexpectedly 0 and then retry
+  # the I/O operation once. The time is in microseconds.
+  IO_SLEEP_TIME: 2
+
 jobs:
 
   linux-multi:
@@ -29,6 +35,9 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@main
 
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
+
     - name: Run bootstrap script
       run: ./bootstrap
 
@@ -37,7 +46,8 @@ jobs:
       run: |
         DIR="checkMPIdebug_shared" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi --enable-debug --disable-shared \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -45,7 +55,8 @@ jobs:
       shell: bash
       run: |
         DIR="checkMPI" && mkdir -p "$DIR" && cd "$DIR"
-        ../configure --enable-mpi CFLAGS="-O2"
+        ../configure --enable-mpi CFLAGS="-O2" \
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -53,7 +64,8 @@ jobs:
       shell: bash
       run: |
         DIR="checkdebug" && mkdir -p "$DIR" && cd "$DIR"
-        ../configure --enable-debug CFLAGS="-O0 -g -Wall -Wno-uninitialized"
+        ../configure --enable-debug CFLAGS="-O0 -g -Wall -Wno-uninitialized" \
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -66,7 +78,8 @@ jobs:
       shell: bash
       run: |
         DIR="checkMPIdebugCXX" && mkdir -p "$DIR" && cd "$DIR"
-        ../configure --enable-mpi --enable-debug CFLAGS="-O0" CC=mpicxx
+        ../configure --enable-mpi --enable-debug CFLAGS="-O0" CC=mpicxx \
+        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -75,7 +88,8 @@ jobs:
       run: |
         DIR="checkOpenMPMPIdebug" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-openmp="-fopenmp" --enable-mpi \
-            --enable-debug CFLAGS="-O0"
+            --enable-debug CFLAGS="-O0" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -83,7 +97,7 @@ jobs:
       shell: bash
       run: |
         DIR="distcheck" && mkdir -p "$DIR" && cd "$DIR"
-        ../configure
+        ../configure CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j distcheck V=0
 
     - name: Upload log files
@@ -110,6 +124,9 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@main
 
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
+
     - name: Run bootstrap script
       run: ./bootstrap
 
@@ -119,7 +136,8 @@ jobs:
         DIR="checkMPIdebug_valgrind" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi --enable-debug \
                      --disable-shared --enable-valgrind \
-          CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+          CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+          CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
@@ -149,6 +167,9 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
+
     - name: Identify version
       shell: bash
       run: |
@@ -165,7 +186,8 @@ jobs:
         ../configure --enable-mpi --enable-debug \
             CFLAGS="-O0 -g -pedantic -Wall -Wextra -Werror \
                 -Wno-unused-parameter -Wno-builtin-declaration-mismatch \
-                -Wno-implicit-fallthrough"
+                -Wno-implicit-fallthrough" \
+                CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
         make -j distcheck V=0

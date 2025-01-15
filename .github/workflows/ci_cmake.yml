@@ -20,6 +20,10 @@ env:
   CTEST_PARALLEL_LEVEL: 0
   CMAKE_INSTALL_PREFIX: ~/local
   CMAKE_PREFIX_PATH: ~/local
+  # Due to busy file system problems on the CI runners, we introduced a patch to
+  # sleep if the MPI count of an I/O operation is unexpectedly 0 and then retry
+  # the I/O operation once. The time is in milliseconds.
+  IO_SLEEP_TIME: 2
 
 jobs:
 
@@ -46,6 +50,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Checkout source code
+
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
 
     - name: Install system dependencies
       if: ${{ matrix.mpi }}
@@ -75,6 +82,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Checkout source code
+
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
 
     - name: Install system dependencies
       if: ${{ matrix.mpi }}
@@ -111,6 +121,14 @@ jobs:
 
     - name: Checkout source code
       uses: actions/checkout@v4
+
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
+
+    - name: Set macro for I/O waiting
+      shell: bash
+      # use an enviroment variable to prepend the flag to the bulit-in compiler flags
+      run: echo "CFLAGS=-DSC_HACK_MPI_SLEEP=$IO_SLEEP_TIME" >> "$GITHUB_ENV"
 
     - name: CMake configure
       run: cmake --preset default -DSC_ENABLE_MPI:BOOL=${{ matrix.mpi }} -DSC_TEST_WITH_VALGRIND:BOOL=${{ matrix.valgrind }}
@@ -154,6 +172,9 @@ jobs:
     - uses: actions/checkout@v4
       name: Checkout source code
 
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
+
     - name: Install system dependencies
       run: brew install open-mpi
 
@@ -176,6 +197,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Checkout source code
+
+    - name: Patch I/O for CI by sleeping if I/O intensity is too high
+      run: git apply doc/patch/patch-CI-IO.patch
 
     - run: echo "CMAKE_INSTALL_PREFIX=$HOME/local" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
