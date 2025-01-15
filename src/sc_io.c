@@ -71,6 +71,8 @@
                                     }} while (0)
 
 
+/* This function is only needed if MPI IO is available */
+#ifdef SC_ENABLE_MPIIO
 /** Portable function to sleep a prescribed amount of milliseconds.
  */
 static void
@@ -94,6 +96,7 @@ sc_io_sleep (int milliseconds){
   SC_ABORT ("No suitable sleep function available.");
 #endif
 }
+#endif
 
 sc_io_sink_t       *
 sc_io_sink_new (int iotype, int iomode, int ioencode, ...)
