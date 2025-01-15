@@ -13,6 +13,9 @@ on:
       - ".github/workflows/composite-cmake/**"
   pull_request:
 
+env:
+  IO_WAITING_TIME: 1000
+
 jobs:
   darwin:
     runs-on: macos-latest
@@ -36,7 +39,8 @@ jobs:
        run: |
           DIR="checkdebug" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-debug \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
           make -j V=0
           make -j check V=0
 
@@ -44,7 +48,8 @@ jobs:
        run: |
           DIR="checkMPIdebug" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-mpi --enable-debug \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
           make -j V=0
           make -j check V=0
 
@@ -52,7 +57,8 @@ jobs:
        run: |
           DIR="checkMPIdebugCXX" && mkdir -p "$DIR" && cd "$DIR"
           ../configure --enable-mpi --enable-debug CC=mpicxx \
-            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter"
+            CFLAGS="-O0 -g -Wall -Wextra -Wno-unused-parameter" \
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME"
           make -j V=0
           make -j check V=0
 
