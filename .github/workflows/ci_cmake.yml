@@ -55,7 +55,7 @@ jobs:
             libmpich-dev mpich
 
     - name: CMake composite steps (build, test, install, examples)
-      uses: ./.github/workflows/composite-cmake 
+      uses: ./.github/workflows/composite-cmake
 
 
   ubuntu-22:
