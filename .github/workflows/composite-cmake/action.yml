@@ -1,8 +1,8 @@
+env:
+  IO_WAITING_TIME: 1000
+
 runs:
   using: "composite"
-
-  env:
-    IO_WAITING_TIME: 1000
 
   steps:
   - name: Set macro for I/O waiting
