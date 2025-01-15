@@ -24,8 +24,13 @@
 #include <sc_io.h>
 #include <sc_puff.h>
 #include <libb64.h>
-/* TODO: Platform dependent? */
-#include<unistd.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#elif _POSIX_C_SOURCE >= 199309L
+#include <time.h>
+#else
+#include <unistd.h>
+#endif
 #ifdef SC_HAVE_ZLIB
 #include <zlib.h>
 #else
@@ -49,7 +54,7 @@
  */
 #define SC_IO_WAIT_AND_RETRY(func, time) do {\
                                     if (*ocount == 0) {\
-                                      usleep (time);\
+                                      sc_io_sleep (time);\
                                       mpiret = func (mpifile, offset,\
                                                      (void *) ptr, count, t,\
                                                      &mpistatus);\
@@ -64,6 +69,31 @@
                                       SC_CHECK_MPI (retval);\
                                       return errcode;\
                                     }} while (0)
+
+
+/** Portable function to sleep a prescribed amount of milliseconds.
+ */
+static void
+sc_io_sleep (int milliseconds){
+#ifdef _POSIX_C_SOURCE >= 199309L
+  struct timespec ts;
+  /* full seconds */
+  ts.tv_sec = milliseconds / 1000;
+  /* nanoseconds */
+  ts.tv_nsec = (milliseconds % 1000) * 1000000;
+  nanosleep (&ts, NULL);
+#elif !defined(_MSC_VER) && defined(_POSIX_C_SOURCE)
+  /* older POSIX */
+  if (milliseconds >= 1000) {
+    sleep (milliseconds / 1000);
+  }
+  usleep ((milliseconds % 1000) * 1000);
+#elif _MSC_VER
+  Sleep (milliseconds);
+#else
+  SC_ABORT ("No suitable sleep function available.");
+#endif
+}
 
 sc_io_sink_t       *
 sc_io_sink_new (int iotype, int iomode, int ioencode, ...)

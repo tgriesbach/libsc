@@ -20,7 +20,10 @@ env:
   CTEST_PARALLEL_LEVEL: 0
   CMAKE_INSTALL_PREFIX: ~/local
   CMAKE_PREFIX_PATH: ~/local
-  IO_WAITING_TIME: 1000
+  # Due to busy file system problems on the CI runners, we introduced a patch to
+  # sleep if the MPI count of an I/O operation is unexpectedly 0 and then retry
+  # the I/O operation once. The time is in milliseconds.
+  IO_WAITING_TIME: 1
 
 jobs:
 
@@ -47,6 +50,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Checkout source code
+
+    # TODO: apply the patch
 
     - name: Install system dependencies
       if: ${{ matrix.mpi }}

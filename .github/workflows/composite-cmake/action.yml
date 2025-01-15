@@ -6,9 +6,6 @@ runs:
     shell: bash
     # use an enviroment variable to prepend the flag to the bulit-in compiler flags
     run: echo "CFLAGS=-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME" >> "$GITHUB_ENV"
-  - name: Test
-    shell: bash
-    run: echo $CFLAGS
   - name: CMake configure
     shell: bash
     run: >-
