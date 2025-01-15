@@ -7,8 +7,7 @@
   "binaryDir": "${sourceDir}/build",
   "cacheVariables": {
     "SC_ENABLE_MPI": true,
-    "CMAKE_COMPILE_WARNING_AS_ERROR": true,
-    "SC_HACK_MPI_SLEEP": "1000"
+    "CMAKE_COMPILE_WARNING_AS_ERROR": true
     }
 }
 ],
