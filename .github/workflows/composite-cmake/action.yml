@@ -7,9 +7,8 @@ runs:
   steps:
   - name: Set macro for I/O waiting
     shell: bash
-    run: |
-      : # use an enviroment variable to prepend the flag
-      export CFLAGS=-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME
+    # use an enviroment variable to prepend the flag
+    run: export CFLAGS=-DSC_HACK_MPI_SLEEP=$IO_WAITING_TIME
   - name: CMake configure
     shell: bash
     run: >-
