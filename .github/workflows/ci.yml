@@ -56,7 +56,7 @@ jobs:
       run: |
         DIR="checkMPI" && mkdir -p "$DIR" && cd "$DIR"
         ../configure --enable-mpi CFLAGS="-O2" \
-        CPPFLAGS="-DSC_HACK_MPI_SLEEP=$SC_IO_SLEEP_TIME"
+            CPPFLAGS="-DSC_HACK_MPI_SLEEP=$SC_IO_SLEEP_TIME"
         make -j V=0
         make -j check V=0
 
