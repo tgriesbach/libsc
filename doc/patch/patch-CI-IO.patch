@@ -1,0 +1,166 @@
+From 9f6dbc45b2d95a486be64e0e3a48899f6283df08 Mon Sep 17 00:00:00 2001
+From: Tim Griesbach <tim.griesbach@uni-bonn.de>
+Date: Wed, 15 Jan 2025 15:23:29 +0100
+Subject: [PATCH] Implement sleep and retry in case of busy file system
+
+---
+ src/sc_io.c | 101 ++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 87 insertions(+), 14 deletions(-)
+
+diff --git a/src/sc_io.c b/src/sc_io.c
+index 4cfc7b81..9005bc9c 100644
+--- a/src/sc_io.c
++++ b/src/sc_io.c
+@@ -37,6 +37,34 @@
+ #include <errno.h>
+ #endif
+ 
++/** In case of an unexpected retrieved count 0, this macro sleeps and retries.
++ * In the Github Actions CI, we experienced transient CI failures due to the
++ * file system not performing requested I/O operations.
++ *
++ * The macro can be only callled in the case that expected count is unequal 0.
++ * It checks if count is 0 and if this is true, it sleeps and then retries the
++ * I/O operation once.
++ */
++#define SC_IO_SLEEP_AND_RETRY(func, time) do {\
++                                    retval = sc_io_error_class (sc_MPI_SUCCESS,\
++                                                                  &errcode);\
++                                    SC_CHECK_MPI (retval);\
++                                    if (*ocount == 0) {\
++                                      sc_sleep (time);\
++                                      mpiret = func (mpifile, offset,\
++                                                     (void *) ptr, count, t,\
++                                                     &mpistatus);\
++                                      if (mpiret == sc_MPI_SUCCESS) {\
++                                        retval = sc_MPI_Get_count (&mpistatus,\
++                                                                   t, ocount);\
++                                        SC_CHECK_MPI (retval);\
++                                      }\
++                                      retval = sc_io_error_class (mpiret,\
++                                                                  &errcode);\
++                                      SC_CHECK_MPI (retval);\
++                                    }} while (0)
++
++
+ sc_io_sink_t       *
+ sc_io_sink_new (int iotype, int iomode, int ioencode, ...)
+ {
+@@ -1691,11 +1719,18 @@ sc_io_read (sc_MPI_File mpifile, void *ptr, size_t zcount,
+   mpiret = MPI_File_read (mpifile, ptr, (int) zcount, t, &mpistatus);
+   SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
+ 
+-#ifdef SC_ENABLE_DEBUG
+-  mpiret = sc_MPI_Get_count (&mpistatus, t, &icount);
+-  SC_CHECK_MPI (mpiret);
+-  SC_CHECK_ABORT (icount == (int) zcount, errmsg);
+-#endif
++  if (zcount > 0) {
++    mpiret = sc_MPI_Get_count (&mpistatus, t, &icount);
++    SC_CHECK_MPI (mpiret);
++
++    if (icount == 0) {
++      sc_sleep (SC_HACK_MPI_SLEEP);
++      mpiret = MPI_File_read (mpifile, ptr, (int) zcount, t, &mpistatus);
++      SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
++    }
++
++    SC_CHECK_ABORT (icount == (int) zcount, errmsg);
++  }
+ #else
+   /* we do not provide a non-MPI I/O implementation of sc_io_read */
+   SC_ABORT ("no non-MPI I/O implementation of sc_io_read/sc_mpi_read");
+@@ -1723,7 +1758,15 @@ sc_io_read_at (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
+     /* working around 0 count not working for some implementations */
+     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
+     SC_CHECK_MPI (mpiret);
+-    return sc_MPI_SUCCESS;
++
++    /* This macro sleeps and tries the I/O operation again if the requested I/O
++     * operation was not performed by the file system.
++     * The macro SC_HACK_MPI_SLEEP is expected to be defined during
++     * configuration.
++     */
++    SC_IO_SLEEP_AND_RETRY (MPI_File_read_at, SC_HACK_MPI_SLEEP);
++
++    return errcode;
+   }
+   retval = sc_io_error_class (mpiret, &errcode);
+   SC_CHECK_MPI (retval);
+@@ -1806,7 +1849,14 @@ sc_io_read_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset, void *ptr,
+     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
+     SC_CHECK_MPI (mpiret);
+ 
+-    return sc_MPI_SUCCESS;
++    /* This macro sleeps and tries the I/O operation again if the requested I/O
++     * operation was not performed by the file system.
++     * The macro SC_HACK_MPI_SLEEP is expected to be defined during
++     * configuration.
++     */
++    SC_IO_SLEEP_AND_RETRY (MPI_File_read_at_all, SC_HACK_MPI_SLEEP);
++
++    return errcode;
+   }
+ 
+   retval = sc_io_error_class (mpiret, &errcode);
+@@ -1975,11 +2025,18 @@ sc_io_write (sc_MPI_File mpifile, const void *ptr, size_t zcount,
+                            (int) zcount, t, &mpistatus);
+   SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
+ 
+-#ifdef SC_ENABLE_DEBUG
+-  mpiret = sc_MPI_Get_count (&mpistatus, t, &icount);
+-  SC_CHECK_MPI (mpiret);
+-  SC_CHECK_ABORT (icount == (int) zcount, errmsg);
+-#endif
++  if (zcount > 0) {
++    mpiret = sc_MPI_Get_count (&mpistatus, t, &icount);
++    SC_CHECK_MPI (mpiret);
++
++    if (icount == 0) {
++      sc_sleep (SC_HACK_MPI_SLEEP);
++      mpiret = MPI_File_write (mpifile, ptr, (int) zcount, t, &mpistatus);
++      SC_CHECK_ABORT (mpiret == sc_MPI_SUCCESS, errmsg);
++    }
++
++    SC_CHECK_ABORT (icount == (int) zcount, errmsg);
++  }
+ #else
+   /* we do not provide a non-MPI I/O implementation of sc_io_write */
+   SC_ABORT ("no non-MPI I/O implementation of sc_io_write/sc_mpi_write");
+@@ -2008,7 +2065,15 @@ sc_io_write_at (sc_MPI_File mpifile, sc_MPI_Offset offset,
+     /* working around 0 count not working for some implementations */
+     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
+     SC_CHECK_MPI (mpiret);
+-    return sc_MPI_SUCCESS;
++
++    /* This macro sleeps and tries the I/O operation again if the requested I/O
++     * operation was not performed by the file system.
++     * The macro SC_HACK_MPI_SLEEP is expected to be defined during
++     * configuration.
++     */
++    SC_IO_SLEEP_AND_RETRY (MPI_File_write_at, SC_HACK_MPI_SLEEP);
++
++    return errcode;
+   }
+   retval = sc_io_error_class (mpiret, &errcode);
+   SC_CHECK_MPI (retval);
+@@ -2091,7 +2156,15 @@ sc_io_write_at_all (sc_MPI_File mpifile, sc_MPI_Offset offset,
+     /* working around 0 count not working for some implementations */
+     mpiret = sc_MPI_Get_count (&mpistatus, t, ocount);
+     SC_CHECK_MPI (mpiret);
+-    return sc_MPI_SUCCESS;
++
++    /* This macro sleeps and tries the I/O operation again if the requested I/O
++     * operation was not performed by the file system.
++     * The macro SC_HACK_MPI_SLEEP is expected to be defined during
++     * configuration.
++     */
++    SC_IO_SLEEP_AND_RETRY (MPI_File_write_at_all, SC_HACK_MPI_SLEEP);
++
++    return errcode;
+   }
+ 
+   retval = sc_io_error_class (mpiret, &errcode);
+-- 
+2.30.2
+
