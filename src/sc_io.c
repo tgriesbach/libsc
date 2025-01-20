@@ -1712,9 +1712,7 @@ sc_io_read (sc_MPI_File mpifile, void *ptr, size_t zcount,
             sc_MPI_Datatype t, const char *errmsg)
 {
 #ifdef SC_ENABLE_MPIIO
-#ifdef SC_ENABLE_DEBUG
   int                 icount;
-#endif
   int                 mpiret;
   sc_MPI_Status       mpistatus;
 
@@ -2017,9 +2015,7 @@ sc_io_write (sc_MPI_File mpifile, const void *ptr, size_t zcount,
              sc_MPI_Datatype t, const char *errmsg)
 {
 #ifdef SC_ENABLE_MPIIO
-#ifdef SC_ENABLE_DEBUG
   int                 icount;
-#endif
   int                 mpiret;
   sc_MPI_Status       mpistatus;
 
