@@ -16,7 +16,7 @@ on:
 jobs:
 
   linux-multi:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Autotools build on Linux
     steps:
 
@@ -97,7 +97,7 @@ jobs:
           ./**/test/*.log
 
   linux-valgrind:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Autotools with valgrind
     steps:
 
@@ -134,7 +134,7 @@ jobs:
           ./**/test/*.log
 
   linux-tarball:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     name: Pack tarball on Linux
     steps:
 

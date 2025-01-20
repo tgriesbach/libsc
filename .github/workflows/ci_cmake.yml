@@ -24,7 +24,7 @@ env:
 jobs:
 
   ubuntu-24:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-20.04
     name: Linux mpi=${{ matrix.mpi }} CC=${{ matrix.cc }} shared=${{ matrix.shared }}
     timeout-minutes: 60
 
@@ -59,7 +59,7 @@ jobs:
 
 
   ubuntu-22:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     name: Linux mpi=${{ matrix.mpi }} CC=${{ matrix.cc }} shared=${{ matrix.shared }}
     timeout-minutes: 60
 
@@ -89,7 +89,7 @@ jobs:
 
   linux-valgrind:
     needs: ubuntu-24
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-20.04
     name: Valgrind Linux mpi=${{ matrix.mpi }} CC=${{ matrix.cc }}
     timeout-minutes: 60
 
